@@ -1,28 +1,31 @@
 const express = require('express');
-require('dotenv').config();
-const Clarifai = require('clarifai');
 const bodyParser = require('body-parser');
-const cors = require('cors');
-
 
 const app = express();
 
-const clarifaiApp = new Clarifai.App({ apiKey: process.env.API_KEY });
+// env variables
+require('dotenv').config();
+const PORT = process.env.PORT || 5000;
 
 // middlewares
 app.use(bodyParser.json())
-app.use(cors());        // resolves Access-Control-Allow-Origin error
 
-app.get('/', (req,res) => {
-    res.json('sending from the server');
-})
+// resolves Access-Control-Allow-Origin error
+const cors = require('cors');
+app.use(cors());
 
-app.post('/predict', (req,res) => {
-    clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, req.body.url)
-    .then(data => res.json(data))
-    .catch(err => res.json("Can't fetch API data"));
-})
+// controllers
+const predict = require('./Controller/predict');
 
-app.listen(5000, () => {
-    console.log('app is running on port 5000');
-})
+// End Points
+app.get('/', (req,res) => { res.json('sending from the server') })
+
+app.post('/predict', (req,res) => predict.handlePredict(req, res))
+
+app.listen(PORT, () => { console.log('app is running on port ' + PORT) })
+
+/* TODO
+    predict route
+    1. process the prediction data, and store in database
+    2. send only box, age, gender, race
+*/

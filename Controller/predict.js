@@ -53,10 +53,14 @@ const saveImages = async (imgUrl, userid, db) => {
 
 const mockupData = (url) => {
     if(url==="https://samples.clarifai.com/face-det.jpg"){
+        console.log("url1")
         return mockup.url1
     } else if(url==="https://cms-tc.pbskids.org/parents/_pbsKidsForParentsHero/homeschool-socialization.jpg?mtime=20190423144706"){
+        console.log("url2")    
         return mockup.url2
-    } else { return mockup.url3 }
+    } else { 
+        console.log("url3")
+        return mockup.url3 }
 }
 
 const handlePredict = async (req, res, db) => {
@@ -64,7 +68,7 @@ const handlePredict = async (req, res, db) => {
     // .then(response => res.json(getPrediction(response)))
     // .catch(err => res.json("Can't fetch API data"));
     const {imgUrl, userid} = req.body;
-    const response = mockupData(req.body.url);
+    const response = mockupData(imgUrl);
     const currImage = await saveImages(imgUrl, userid, db);                     // must wait return value to store imgid in predictions table
     const currPredicts = await getPrediction(currImage.imgid, response, db);    // resolve the promise first before sending a response
     console.log("prediction stored")

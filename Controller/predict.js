@@ -34,48 +34,43 @@ const getPrediction = (response, db) => {
         const imgid = 1;
         return { imgid, age, gender, race, btop, bleft, bbot, bright }                  // returns box:box, age:age etc as object
     })
-    savePredict(db, data);
-    return data
+    const currPredicts = savePredict(db, data);
+    return currPredicts
 }
 
-const savePredict = (db, data) => {
-    db('predictions').insert(data)
-    .then(console.log("prediction stored"))
-    .catch(err => res.status(400).json("error storing predictions to database"))
+const savePredict = async (db, data) => {
+    const currPredicts = await db('predictions').insert(data).returning('*')
+    return currPredicts
+    // .catch(err => res.status(400).json("error storing predictions to database"))     // res is not defined here
 }
 
-const saveImages = (imgUrl, userId, db) => {
-    const path = `./uploads/${new Date().toISOString().replace(/:/g,'-')}user${userId}.jpg`;
-    download(imgUrl, path, () => { console.log('downloaded image') })
-    db('images').insert({ userid: userId, imgurl: path, oriurl: imgUrl })
-    .then(() => console.log("image stored"))
-    .catch(err => res.status(400).json("error storing image to database"))
+const saveImages = async (imgUrl, userid, db) => {
+    const path = `./uploads/${new Date().toISOString().replace(/:/g,'-')}user${userid}.jpg`;
+    // download(imgUrl, path, () => { console.log('downloaded image') })
+    const currImage = await db('images').insert({ userid, imgurl: path, oriurl: imgUrl }).returning('*')
+    return currImage[0]
+    // .catch(err => res.status(400).json("error storing image to database"))   // res is not defined here
 }
 
-const handlePredict = (req, res, db) => {
+const mockupData = (url) => {
+    if(url==="https://samples.clarifai.com/face-det.jpg"){
+        return mockup.url1
+    } else if(url==="https://cms-tc.pbskids.org/parents/_pbsKidsForParentsHero/homeschool-socialization.jpg?mtime=20190423144706"){
+        return mockup.url2
+    } else { return mockup.url3 }
+}
+
+const handlePredict = async (req, res, db) => {
     // clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, req.body.url)
     // .then(response => res.json(getPrediction(response)))
     // .catch(err => res.json("Can't fetch API data"));
     const imgUrl = req.body.url;
-    const userId = 1;
-    saveImages(imgUrl, userId, db);
-    switch (req.body.url) {
-        case "https://samples.clarifai.com/face-det.jpg":
-            console.log("url1");
-            res.json(getPrediction(mockup.url1, db));
-            break;
-        case "https://cms-tc.pbskids.org/parents/_pbsKidsForParentsHero/homeschool-socialization.jpg?mtime=20190423144706":
-            console.log("url2");    // no CORS header
-            res.json(getPrediction(mockup.url2, db));
-            break;
-        case "https://cdn.elearningindustry.com/wp-content/uploads/2018/12/is-socializing-in-the-workplace-important-for-team-productivity-1024x574.jpg":
-            console.log("url3");
-            res.json(getPrediction(mockup.url3, db));
-            break;
-        default:
-            res.json(getPrediction(mockup.url2, db));
-            break;
-    }
+    const userid = 2;
+    const response = mockupData(req.body.url);
+    const currImage = saveImages(imgUrl, userid, db);       // returns a promise
+    const currPredicts = getPrediction(response, db);       // also a promise
+    const currData = await Promise.all([currImage, currPredicts])   // resolves both promises
+    res.json(currData);
 }
 
 module.exports = {handlePredict}

@@ -15,6 +15,20 @@ const db = knex({
     }
 });
 
+// multer config
+const multer = require('multer');
+const storage = multer.diskStorage({        // multer executes these functions everytime a file is received
+    destination: function(req, file, cb){
+        cb(null, './uploads');              // null can be replaced with a potential error, relative path
+    },
+    filename: function(req, file, cb){
+        // in windows, u can't use ':' as filename, so we replace all ':' in the time format with dash (g is for global replace)
+        // adding .jpg in the end bcz images saved as blob don't have original names with them
+        cb(null, new Date().toISOString().replace(/:/g,'-') + file.originalname + '.jpg');    
+    }
+})
+const upload = multer({storage: storage});
+
 // env variables
 require('dotenv').config();
 const PORT = process.env.PORT || 5000;
@@ -31,6 +45,7 @@ const predict = require('./Controller/predict');
 const register = require('./Controller/register');
 const signin = require('./Controller/signin');
 const deleteuser = require('./Controller/deleteuser');
+const blobs = require('./Controller/blobs');
 
 
 
@@ -45,6 +60,8 @@ app.post('/signin', (req, res) => signin.handleSignin(req, res, db))
 app.delete('/deleteuser', (req, res) => deleteuser.handleDeleteUser(req, res, db))
 
 app.post('/predict', (req,res) => predict.handlePredict(req, res, db))
+
+app.post('/blobs', upload.array('image'), (req,res) => blobs.handleBlobs(req, res, db))
 
 app.listen(PORT, () => { console.log('app is running on port ' + PORT) })
 
@@ -62,12 +79,13 @@ app.listen(PORT, () => { console.log('app is running on port ' + PORT) })
     create register route   DONE
     create signin route     DONE
     create delete user route    DONE, needs testing (can do later)
+    create receive blobs route, store to faceblobs table, requires multer     DONE
 
     for database
     1. 'face' column in 'images' table is redundant, it equals to predictions.length, it's also hard to store synchronously, delete it later
     2. mind that its possible that a prediction doesn't contain a face, so the predictions should not be NOT NULL
     3. store faceblobs to database (after constructing front end), requires multer
-    4. very last: add option to receive blob data instead of url (or can be done with generated URL blob??)
+    4. very last: add option to receive blob data (from file upload, or pasting ss) instead of url (or can be done with generated URL blob??)
 
 
     for download function

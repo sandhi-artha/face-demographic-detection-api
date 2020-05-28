@@ -19,7 +19,7 @@ const download = (url, path, callback) => {
 const mockup = require('./mockup');
 const raceOption = require('./race');
 
-const getPrediction = (response, db) => {
+const getPrediction = (imgid, response, db) => {
     const data = response.outputs[0].data.regions.map(region => {
         const {top_row, left_col, bottom_row, right_col} = region.region_info.bounding_box;
         // calculate bounding box overlayed in image
@@ -31,7 +31,6 @@ const getPrediction = (response, db) => {
         const age = Number(region.data.concepts[0].name);
         const gender = region.data.concepts[20].name === 'masculine';
         const race = raceOption.race.indexOf(region.data.concepts[22].name);            // returns race index
-        const imgid = 1;
         return { imgid, age, gender, race, btop, bleft, bbot, bright }                  // returns box:box, age:age etc as object
     })
     const currPredicts = savePredict(db, data);
@@ -64,13 +63,12 @@ const handlePredict = async (req, res, db) => {
     // clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, req.body.url)
     // .then(response => res.json(getPrediction(response)))
     // .catch(err => res.json("Can't fetch API data"));
-    const imgUrl = req.body.url;
-    const userid = 2;
+    const {imgUrl, userid} = req.body;
     const response = mockupData(req.body.url);
-    const currImage = saveImages(imgUrl, userid, db);       // returns a promise
-    const currPredicts = getPrediction(response, db);       // also a promise
-    const currData = await Promise.all([currImage, currPredicts])   // resolves both promises
-    res.json(currData);
+    const currImage = await saveImages(imgUrl, userid, db);                     // must wait return value to store imgid in predictions table
+    const currPredicts = await getPrediction(currImage.imgid, response, db);    // resolve the promise first before sending a response
+    console.log("prediction stored")
+    res.json({images: currImage, predictions: currPredicts});
 }
 
 module.exports = {handlePredict}

@@ -55,8 +55,9 @@ app.listen(PORT, () => { console.log('app is running on port ' + PORT) })
     3. create mockup data   DONE
     4. create a database according to scheme    DONE
     5. simulate storing prediction into database    DONE
-    6. error handling still not good, you have catch everytime store in database but it sends a response which will trigger an error bcz other ops also sends response (can only send once)
-    7. send back updated images and predictions
+    6. Fix error handling
+        you have catch everytime store in database but it sends a response which will trigger an error bcz other ops also sends response (can only send once)
+    7. send back updated images and predictions     DONE
 
     create register route   DONE
     create signin route     DONE

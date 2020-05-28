@@ -1,48 +1,64 @@
-const Clarifai = require('clarifai');
+// for downloading images (request is deprecated but it just means it won't have any more updates)
+const fs = require('fs');
+const request = require('request');
+const download = (url, path, callback) => {
+    request.head(url, (err, res, body) => {
+        request(url)
+        .pipe(fs.createWriteStream(path))
+        .on('close', callback)
+        .on('error', err => {console.log("Error downloading image! ", err.message)})     // must have error handling, or it will say unhandled stream error in pipe
+    })
+}
+
+// ClarifAI API
+// const Clarifai = require('clarifai');
 // const clarifaiApp = new Clarifai.App({ apiKey: process.env.API_KEY });
 
 // get simulated data
 // https://samples.clarifai.com/face-det.jpg
 const mockup = require('./mockup');
+const raceOption = require('./race');
 
 const getPrediction = (response, db) => {
     const data = response.outputs[0].data.regions.map(region => {
         const {top_row, left_col, bottom_row, right_col} = region.region_info.bounding_box;
         // calculate bounding box overlayed in image
-        const box = { bTop: top_row * 100, bLeft: left_col * 100, bBot: 100 - (bottom_row * 100), bRight: 100 - (right_col * 100) };
+        const btop = top_row * 100;
+        const bleft =  left_col * 100;
+        const bbot = 100 - (bottom_row * 100);
+        const bright = 100 - (right_col * 100);
         // get important demographic data
-        const age = region.data.concepts[0].name;
-        const gender = region.data.concepts[20].name;
-        const race = region.data.concepts[22].name;
-        return { box, age, gender, race }               // returns box:box, age:age etc as object
+        const age = Number(region.data.concepts[0].name);
+        const gender = region.data.concepts[20].name === 'masculine';
+        const race = raceOption.race.indexOf(region.data.concepts[22].name);            // returns race index
+        const imgid = 1;
+        return { imgid, age, gender, race, btop, bleft, bbot, bright }                  // returns box:box, age:age etc as object
     })
     savePredict(db, data);
     return data
 }
 
 const savePredict = (db, data) => {
-    const insertData = data.map((pred,i) => {
-        return {
-            imgid: i,
-            age: Number(pred.age),
-            gender: pred.gender === 'masculine',
-            race: i,
-            btop: pred.box.bTop,
-            bleft: pred.box.bLeft,
-            bbot: pred.box.bBot,
-            bright: pred.box.bRight
-        }
-    })
-    db('predictions').insert(insertData)
-    .then(console.log("data stored"))
-    .catch(err => res.status(400).json("database error"))
+    db('predictions').insert(data)
+    .then(console.log("prediction stored"))
+    .catch(err => res.status(400).json("error storing predictions to database"))
 }
 
+const saveImages = (imgUrl, userId, db) => {
+    const path = `./uploads/${new Date().toISOString().replace(/:/g,'-')}user${userId}.jpg`;
+    download(imgUrl, path, () => { console.log('downloaded image') })
+    db('images').insert({ userid: userId, imgurl: path, oriurl: imgUrl })
+    .then(() => console.log("image stored"))
+    .catch(err => res.status(400).json("error storing image to database"))
+}
 
 const handlePredict = (req, res, db) => {
     // clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, req.body.url)
     // .then(response => res.json(getPrediction(response)))
     // .catch(err => res.json("Can't fetch API data"));
+    const imgUrl = req.body.url;
+    const userId = 1;
+    saveImages(imgUrl, userId, db);
     switch (req.body.url) {
         case "https://samples.clarifai.com/face-det.jpg":
             console.log("url1");

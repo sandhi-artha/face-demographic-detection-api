@@ -5,14 +5,14 @@ const handleSignin = (req, res, db) => {
     const { email, password } = req.body;
     db.transaction(trx => {
         trx('users').where({email})
-        .then(user => {
+        .then(user => {     // grab user data
             if(bcrypt.compareSync(password, user[0].hash)){                 // check if password matches hash
                 return trx('images').where({userid: user[0].userid})
-                    .then(images => {                                       // if the user have no images yet it will return empty array
+                    .then(images => {       // grab image data, if user have no images, it will return empty array
                         delete user[0].hash;                                // don't want the hash sent to the front end
                         const imgid = images.map( image => image.imgid )
                         return trx('predictions').whereIn('imgid', imgid)
-                            .then(predictions => res.json({
+                            .then(predictions => res.json({     // get prediction data
                                 profile: user[0],
                                 images: images,
                                 predictions: predictions}))

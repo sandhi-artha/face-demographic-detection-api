@@ -32,6 +32,9 @@ const register = require('./Controller/register');
 const signin = require('./Controller/signin');
 const deleteuser = require('./Controller/deleteuser');
 
+
+
+
 // End Points
 app.get('/', (req,res) => { res.json('sending from the server') })
 
@@ -58,6 +61,12 @@ app.listen(PORT, () => { console.log('app is running on port ' + PORT) })
     create delete user route    DONE, needs testing (can do later)
 
     for database
-    1. face col is redundant, it equals to images.length
+    1. 'face' column in 'images' table is redundant, it equals to predictions.length, it's also hard to store synchronously, delete it later
     2. mind that its possible that a prediction doesn't contain a face, so the predictions should not be NOT NULL
+    3. store faceblobs to database (after constructing front end), requires multer
+    4. very last: add option to receive blob data instead of url (or can be done with generated URL blob??)
+
+
+    for download function
+    1. at size limiter of only 1 MB
 */

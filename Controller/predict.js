@@ -11,8 +11,8 @@ const download = (url, path, callback) => {
 }
 
 // ClarifAI API
-// const Clarifai = require('clarifai');
-// const clarifaiApp = new Clarifai.App({ apiKey: process.env.API_KEY });
+const Clarifai = require('clarifai');
+const clarifaiApp = new Clarifai.App({ apiKey: process.env.API_KEY });
 
 // get simulated data
 // https://samples.clarifai.com/face-det.jpg
@@ -43,10 +43,10 @@ const savePredict = async (db, data) => {
     // .catch(err => res.status(400).json("error storing predictions to database"))     // res is not defined here
 }
 
-const saveImages = async (imgUrl, userid, db) => {
+const saveImages = async (imgUrl, userid, face, db) => {
     const path = `./uploads/${new Date().toISOString().replace(/:/g,'-')}user${userid}.jpg`;
-    // download(imgUrl, path, () => { console.log('downloaded image') })
-    const currImage = await db('images').insert({ userid, imgurl: path, oriurl: imgUrl }).returning('*')
+    download(imgUrl, path, () => { console.log('downloaded image') })
+    const currImage = await db('images').insert({ userid, imgurl: path.slice(2), oriurl: imgUrl, face }).returning('*')
     return currImage[0]
     // .catch(err => res.status(400).json("error storing image to database"))   // res is not defined here
 }
@@ -68,8 +68,10 @@ const handlePredict = async (req, res, db) => {
     // .then(response => res.json(getPrediction(response)))
     // .catch(err => res.json("Can't fetch API data"));
     const {imgUrl, userid} = req.body;
-    const response = mockupData(imgUrl);
-    const currImage = await saveImages(imgUrl, userid, db);                     // must wait return value to store imgid in predictions table
+    // const response = mockupData(imgUrl);
+    const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, imgUrl);
+    const face = response.outputs[0].data.regions.length;
+    const currImage = await saveImages(imgUrl, userid, face, db);                     // must wait return value to store imgid in predictions table
     const currPredicts = await getPrediction(currImage.imgid, response, db);    // resolve the promise first before sending a response
     console.log("prediction stored")
     res.json({images: currImage, predictions: currPredicts});

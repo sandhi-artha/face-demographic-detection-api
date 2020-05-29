@@ -35,6 +35,7 @@ const PORT = process.env.PORT || 5000;
 
 // middlewares
 app.use(bodyParser.json())
+app.use('/uploads', express.static('uploads'))      // used to make a static folder (uploads) publicly available
 
 // resolves Access-Control-Allow-Origin error
 const cors = require('cors');
@@ -75,6 +76,7 @@ app.listen(PORT, () => { console.log('app is running on port ' + PORT) })
     6. Fix error handling
         you have catch everytime store in database but it sends a response which will trigger an error bcz other ops also sends response (can only send once)
     7. send back updated images and predictions     DONE
+    8. change image path to be uploads... instead of ./uploads...
 
     create register route   DONE
     create signin route     DONE

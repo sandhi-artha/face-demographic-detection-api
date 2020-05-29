@@ -63,18 +63,24 @@ const mockupData = (url) => {
         return mockup.url3 }
 }
 
-const handlePredict = async (req, res, db) => {
+const handlePredict = (req, res, db) => {
     // clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, req.body.url)
     // .then(response => res.json(getPrediction(response)))
     // .catch(err => res.json("Can't fetch API data"));
     const {imgUrl, userid} = req.body;
-    // const response = mockupData(imgUrl);
-    const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, imgUrl);
+    const response = mockupData(imgUrl);
+    // const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, imgUrl);
+
     const face = response.outputs[0].data.regions.length;
-    const currImage = await saveImages(imgUrl, userid, face, db);                     // must wait return value to store imgid in predictions table
-    const currPredicts = await getPrediction(currImage.imgid, response, db);    // resolve the promise first before sending a response
-    console.log("prediction stored")
-    res.json({images: currImage, predictions: currPredicts});
+    const path = `./uploads/${new Date().toISOString().replace(/:/g,'-')}user${userid}.jpg`;
+    download(imgUrl, path, async () => {
+        console.log('downloaded image')
+        const currImage = await db('images').insert({ userid, imgurl: path.slice(2), oriurl: imgUrl, face }).returning('*')
+        // const currImage = await saveImages(imgUrl, userid, face, db);                     // must wait return value to store imgid in predictions table
+        const currPredicts = await getPrediction(currImage[0].imgid, response, db);    // resolve the promise first before sending a response
+        console.log("prediction stored")
+        res.json({images: currImage, predictions: currPredicts});
+    })
 }
 
 module.exports = {handlePredict}

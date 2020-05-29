@@ -33,13 +33,13 @@ const upload = multer({storage: storage});
 require('dotenv').config();
 const PORT = process.env.PORT || 5000;
 
+// grants Access-Control-Allow-Origin header (put it before express static so it applies to static files also)
+const cors = require('cors');
+app.use(cors());
+
 // middlewares
 app.use(bodyParser.json())
 app.use('/uploads', express.static('uploads'))      // used to make a static folder (uploads) publicly available
-
-// resolves Access-Control-Allow-Origin error
-const cors = require('cors');
-app.use(cors());
 
 // controllers
 const predict = require('./Controller/predict');
@@ -89,6 +89,9 @@ app.listen(PORT, () => { console.log('app is running on port ' + PORT) })
     3. store faceblobs to database (after constructing front end), requires multer
     4. very last: add option to receive blob data (from file upload, or pasting ss) instead of url (or can be done with generated URL blob??)
 
+    CURRENT
+    you want to use the downloaded image to be the one painted in the FE, but it needs to finish downloading before you can use it
+    otherwise it will return 404 Not Found
 
     for download function
     1. at size limiter of only 1 MB

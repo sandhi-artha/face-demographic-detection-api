@@ -28,6 +28,8 @@ const storage = multer.diskStorage({        // multer executes these functions e
     }
 })
 const upload = multer({storage: storage});
+const storageBuffer = multer.memoryStorage();           // when using this, multer will store the files in memory as buffer objects
+const getBuffer = multer({storage: storageBuffer});
 
 // env variables
 require('dotenv').config();
@@ -49,7 +51,11 @@ const deleteuser = require('./Controller/deleteuser');
 const blobs = require('./Controller/blobs');
 
 
+// ClarifAI API
+const Clarifai = require('clarifai');
+const clarifaiApp = new Clarifai.App({ apiKey: process.env.API_KEY });
 
+const fs = require('fs');
 
 // End Points
 app.get('/', (req,res) => { res.json('sending from the server') })
@@ -63,6 +69,12 @@ app.delete('/deleteuser', (req, res) => deleteuser.handleDeleteUser(req, res, db
 app.post('/predict', (req,res) => predict.handlePredict(req, res, db))
 
 app.post('/blobs', upload.array('image'), (req,res) => blobs.handleBlobs(req, res, db))
+
+app.post('/imageblobs', getBuffer.single('imgBlob'), async (req,res) => {
+    const b64 = req.file.buffer.toString('base64');
+    const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, {base64: b64});
+    res.json(response);
+})
 
 app.listen(PORT, () => { console.log('app is running on port ' + PORT) })
 

@@ -12,10 +12,10 @@ const handleSignin = (req, res, db) => {
                         delete user[0].hash;                                // don't want the hash sent to the front end
                         const imgid = images.map( image => image.imgid )
                         return trx('predictions').whereIn('imgid', imgid)
-                            .then(predictions => res.json({     // get prediction data
-                                profile: user[0],
-                                images: images,
-                                predictions: predictions}))
+                            .then(predictions => {
+                                console.log("user signed in!");
+                                res.json({ profile: user[0], images, predictions });
+                            })
                     })
             } else { res.status(400).json('Error: incorrect email/passowrd') }
         })

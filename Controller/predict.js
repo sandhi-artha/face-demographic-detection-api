@@ -10,13 +10,6 @@ const download = (url, path, callback) => {
     })
 }
 
-// ClarifAI API
-const Clarifai = require('clarifai');
-const clarifaiApp = new Clarifai.App({ apiKey: process.env.API_KEY });
-
-// get simulated data
-// https://samples.clarifai.com/face-det.jpg
-const mockup = require('./mockup');
 const raceOption = require('./race');
 
 const getPrediction = (imgid, response, db) => {
@@ -43,23 +36,7 @@ const savePredict = async (db, data) => {
     // .catch(err => res.status(400).json("error storing predictions to database"))     // res is not defined here
 }
 
-const mockupData = (url) => {
-    if(url==="https://samples.clarifai.com/face-det.jpg"){
-        console.log("url1")
-        return mockup.url1
-    } else if(url==="https://cms-tc.pbskids.org/parents/_pbsKidsForParentsHero/homeschool-socialization.jpg?mtime=20190423144706"){
-        console.log("url2")    
-        return mockup.url2
-    } else { 
-        console.log("url3")
-        return mockup.url3 }
-}
-
-const handlePredict = async (req, res, db) => {
-    const {imgUrl, userid} = req.body;
-    // const response = mockupData(imgUrl);
-    const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, imgUrl);
-
+const handlePredict = async (res, db, imgUrl, userid, response) => {
     const face = response.outputs[0].data.regions.length;
     const path = `./uploads/${new Date().toISOString().replace(/:/g,'-')}user${userid}.jpg`;
     download(imgUrl, path, async () => {

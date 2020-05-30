@@ -50,12 +50,24 @@ const signin = require('./Controller/signin');
 const deleteuser = require('./Controller/deleteuser');
 const blobs = require('./Controller/blobs');
 
-
 // ClarifAI API
 const Clarifai = require('clarifai');
 const clarifaiApp = new Clarifai.App({ apiKey: process.env.API_KEY });
 
-const fs = require('fs');
+// get simulated data
+// https://samples.clarifai.com/face-det.jpg
+const mockup = require('./Controller/mockup');
+const mockupData = (url) => {
+    if(url==="https://samples.clarifai.com/face-det.jpg"){
+        console.log("url1")
+        return mockup.url1
+    } else if(url==="https://cms-tc.pbskids.org/parents/_pbsKidsForParentsHero/homeschool-socialization.jpg?mtime=20190423144706"){
+        console.log("url2")    
+        return mockup.url2
+    } else { 
+        console.log("url3")
+        return mockup.url3 }
+}
 
 // End Points
 app.get('/', (req,res) => { res.json('sending from the server') })
@@ -70,10 +82,19 @@ app.post('/predict', (req,res) => predict.handlePredict(req, res, db))
 
 app.post('/blobs', upload.array('image'), (req,res) => blobs.handleBlobs(req, res, db))
 
-app.post('/imageblobs', getBuffer.single('imgBlob'), async (req,res) => {
+app.post('/predicturl', async (req,res) => {
+    const {imgUrl, userid} = req.body;
+    // const response = mockupData(imgUrl);
+    const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, imgUrl);
+    return predict.handlePredict(res, db, imgUrl, userid, response)
+})
+
+app.post('/predictclipboard', getBuffer.single('imgBlob'), async (req,res) => {
+    const {userid} = req.body;
+    const imgUrl = "user_data";
     const b64 = req.file.buffer.toString('base64');
     const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, {base64: b64});
-    res.json(response);
+    return predict.handlePredict(res, db, imgUrl, userid, response)
 })
 
 app.listen(PORT, () => { console.log('app is running on port ' + PORT) })

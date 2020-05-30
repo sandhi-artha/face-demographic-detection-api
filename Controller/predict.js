@@ -36,11 +36,19 @@ const savePredict = async (db, data) => {
     // .catch(err => res.status(400).json("error storing predictions to database"))     // res is not defined here
 }
 
-const handlePredict = async (res, db, imgUrl, userid, response) => {
+const handlePredict = async (req, res, db, imgUrl, userid, response) => {
     const face = response.outputs[0].data.regions.length;
-    const path = `./uploads/${new Date().toISOString().replace(/:/g,'-')}user${userid}.jpg`;
+    let path = `./uploads/${new Date().toISOString().replace(/:/g,'-')}user${userid}`;
     // if the source is from url, then download it
-    if (imgUrl !== "user_data") { console.log(await download(imgUrl, path)) }
+    if (imgUrl === "user_data") {
+        path += '.png';
+        fs.writeFile(path, req.file.buffer, function(err){
+            err ? console.log("error writing image buffer") : console.log("image buffer downloaded")
+        })
+    } else {
+        path += '.jpg';
+        console.log(await download(imgUrl, path))
+    }
     const currImage = await db('images').insert({ userid, imgurl: path.slice(2), oriurl: imgUrl, face }).returning('*')
     const currPredicts = await getPrediction(currImage[0].imgid, response, db);
     console.log("image and predictions stored")

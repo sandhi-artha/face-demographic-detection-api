@@ -69,8 +69,6 @@ const mockupData = (url) => {
         return mockup.url3 }
 }
 
-const fs = require('fs');
-
 // End Points
 app.get('/', (req,res) => { res.json('sending from the server') })
 
@@ -88,17 +86,15 @@ app.post('/predict', async (req,res) => {
     const {imgUrl, userid} = req.body;
     const response = mockupData(imgUrl);
     // const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, imgUrl);
-    return predict.handlePredict(res, db, imgUrl, userid, response)
+    return predict.handlePredict(req, res, db, imgUrl, userid, response)
 })
 
 app.post('/predictclipboard', getBuffer.single('imgBlob'), async (req,res) => {
     const {userid} = req.body;
     const imgUrl = "user_data";
     const b64 = req.file.buffer.toString('base64');
-    fs.writeFile('./uploads/screenshot.png', req.file.buffer, function(err){
-        err ? console.log("error writing image buffer") : console.log("image buffer downloaded")})
     const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, {base64: b64});
-    return predict.handlePredict(res, db, imgUrl, userid, response)
+    return predict.handlePredict(req, res, db, imgUrl, userid, response)
 })
 
 app.listen(PORT, () => { console.log('app is running on port ' + PORT) })

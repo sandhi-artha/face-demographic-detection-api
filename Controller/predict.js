@@ -1,14 +1,14 @@
 // for downloading images (request is deprecated but it just means it won't have any more updates)
 const fs = require('fs');
 const request = require('request');
-const download = (url, path, callback) => {
+const download = (url, path) => new Promise((resolve, reject) => {
     request.head(url, (err, res, body) => {
         request(url)
         .pipe(fs.createWriteStream(path))
-        .on('close', callback)
-        .on('error', err => {console.log("Error downloading image! ", err.message)})     // must have error handling, or it will say unhandled stream error in pipe
+        .on('close', () => resolve("image downloaded"))
+        .on('error', () => reject("image download failed"))     // must have error handling, or it will say unhandled stream error in pipe
     })
-}
+})
 
 const raceOption = require('./race');
 
@@ -39,13 +39,12 @@ const savePredict = async (db, data) => {
 const handlePredict = async (res, db, imgUrl, userid, response) => {
     const face = response.outputs[0].data.regions.length;
     const path = `./uploads/${new Date().toISOString().replace(/:/g,'-')}user${userid}.jpg`;
-    download(imgUrl, path, async () => {
-        console.log('downloaded image')
-        const currImage = await db('images').insert({ userid, imgurl: path.slice(2), oriurl: imgUrl, face }).returning('*')
-        const currPredicts = await getPrediction(currImage[0].imgid, response, db);
-        console.log("image and predictions stored")
-        res.json({images: currImage, predictions: currPredicts});
-    })
+    // if the source is from url, then download it
+    if (imgUrl !== "user_data") { console.log(await download(imgUrl, path)) }
+    const currImage = await db('images').insert({ userid, imgurl: path.slice(2), oriurl: imgUrl, face }).returning('*')
+    const currPredicts = await getPrediction(currImage[0].imgid, response, db);
+    console.log("image and predictions stored")
+    res.json({images: currImage, predictions: currPredicts});
 }
 
 module.exports = {handlePredict}

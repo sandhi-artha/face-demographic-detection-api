@@ -44,30 +44,11 @@ app.use(bodyParser.json())
 app.use('/uploads', express.static('uploads'))      // used to make a static folder (uploads) publicly available
 
 // controllers
-const predict = require('./Controller/predict');
 const register = require('./Controller/register');
 const signin = require('./Controller/signin');
 const deleteuser = require('./Controller/deleteuser');
 const blobs = require('./Controller/blobs');
-
-// ClarifAI API
-const Clarifai = require('clarifai');
-const clarifaiApp = new Clarifai.App({ apiKey: process.env.API_KEY });
-
-// get simulated data
-// https://samples.clarifai.com/face-det.jpg
-const mockup = require('./Controller/mockup');
-const mockupData = (url) => {
-    if(url==="https://samples.clarifai.com/face-det.jpg"){
-        console.log("url1")
-        return mockup.url1
-    } else if(url==="https://cms-tc.pbskids.org/parents/_pbsKidsForParentsHero/homeschool-socialization.jpg?mtime=20190423144706"){
-        console.log("url2")    
-        return mockup.url2
-    } else { 
-        console.log("url3")
-        return mockup.url3 }
-}
+const predictsrc = require('./Controller/predictsrc');
 
 // End Points
 app.get('/', (req,res) => { res.json('sending from the server') })
@@ -78,24 +59,11 @@ app.post('/signin', (req, res) => signin.handleSignin(req, res, db))
 
 app.delete('/deleteuser', (req, res) => deleteuser.handleDeleteUser(req, res, db))
 
-// app.post('/predict', (req,res) => predict.handlePredict(req, res, db))
-
 app.post('/blobs', upload.array('image'), (req,res) => blobs.handleBlobs(req, res, db))
 
-app.post('/predict', async (req,res) => {
-    const {imgUrl, userid} = req.body;
-    const response = mockupData(imgUrl);
-    // const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, imgUrl);
-    return predict.handlePredict(req, res, db, imgUrl, userid, response)
-})
+app.post('/predict', (req,res) => predictsrc.handlePredictURL(req, res, db))
 
-app.post('/predictclipboard', getBuffer.single('imgBlob'), async (req,res) => {
-    const {userid} = req.body;
-    const imgUrl = "user_data";
-    const b64 = req.file.buffer.toString('base64');
-    const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, {base64: b64});
-    return predict.handlePredict(req, res, db, imgUrl, userid, response)
-})
+app.post('/predictclipboard', getBuffer.single('imgBlob'), (req,res) => predictsrc.handlePredictClipboard(req, res, db))
 
 app.listen(PORT, () => { console.log('app is running on port ' + PORT) })
 
@@ -117,15 +85,17 @@ app.listen(PORT, () => { console.log('app is running on port ' + PORT) })
     create receive blobs route, store to faceblobs table, requires multer     DONE
 
     for database
-    1. 'face' column in 'images' table is redundant, it equals to predictions.length, it's also hard to store synchronously, delete it later
+    1. 'face' column in 'images' table is redundant, it equals to predictions.length, it's also hard to store synchronously, delete it later    NO, faces can be useful
     2. mind that its possible that a prediction doesn't contain a face, so the predictions should not be NOT NULL
-    3. store faceblobs to database (after constructing front end), requires multer
-    4. very last: add option to receive blob data (from file upload, or pasting ss) instead of url (or can be done with generated URL blob??)
+    3. store faceblobs to database (after constructing front end), requires multer  DONE
+    4. very last: add option to receive blob data (from file upload, or pasting ss) instead of url (or can be done with generated URL blob??)   DONE
 
     CURRENT
     you want to use the downloaded image to be the one painted in the FE, but it needs to finish downloading before you can use it
-    otherwise it will return 404 Not Found
+    otherwise it will return 404 Not Found      DONE, reworked the download function to return promise
 
-    for download function
     1. at size limiter of only 1 MB
+
+    Left to do:
+    1. fix error handling and console.log for progress
 */

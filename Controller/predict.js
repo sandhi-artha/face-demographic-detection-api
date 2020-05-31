@@ -39,13 +39,12 @@ const savePredict = async (db, data) => {
 const handlePredict = async (req, res, db, imgUrl, userid, response) => {
     const face = response.outputs[0].data.regions.length;
     let path = `./uploads/${new Date().toISOString().replace(/:/g,'-')}user${userid}`;
-    // if the source is from url, then download it
-    if (imgUrl === "user_data") {
+    if (imgUrl === "user_data") {       // if source is from clipboard
         path += '.png';
         fs.writeFile(path, req.file.buffer, function(err){
             err ? console.log("error writing image buffer") : console.log("image buffer downloaded")
         })
-    } else {
+    } else {                            // if source is from url
         path += '.jpg';
         console.log(await download(imgUrl, path))
     }

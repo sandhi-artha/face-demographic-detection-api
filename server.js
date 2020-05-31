@@ -8,10 +8,10 @@ const app = express();
 const db = knex({
     client: 'pg',               // change to what db ur using
     connection: {
-        host : '127.0.0.1',     // location of db (hosted platform)
-        user : 'postgres',
-        password : 'sandhi',
-        database : 'facedetection'
+        connectionString: process.env.DATABASE_URL,
+        ssl: {
+            rejectUnauthorized: false
+        }
     }
 });
 

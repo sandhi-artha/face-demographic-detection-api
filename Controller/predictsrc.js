@@ -21,17 +21,28 @@ const clarifaiApp = new Clarifai.App({ apiKey: process.env.API_KEY });
 
 const handlePredictURL = async (req, res, db) => {
     const {imgUrl, userid} = req.body;
-    const response = mockupData(imgUrl);
-    // const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, imgUrl);
-    predict.handlePredict(req, res, db, imgUrl, userid, response)
+    try {
+        // const response = mockupData(imgUrl);
+        const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, imgUrl);
+        console.log(response);
+        predict.handlePredict(req, res, db, imgUrl, userid, response)
+    } catch (error) {
+        console.log("invalid url or API failure");
+        res.status(400).json("Failed retrieving image URL");
+    }
 }
 
 const handlePredictClipboard = async (req, res, db) => {
     const {userid} = req.body;
     const imgUrl = "user_data";
     const b64 = req.file.buffer.toString('base64');
-    const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, {base64: b64});
-    predict.handlePredict(req, res, db, imgUrl, userid, response)
+    try {
+        const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, {base64: b64});
+        predict.handlePredict(req, res, db, imgUrl, userid, response)
+    } catch (error) {
+        console.log("invalid url or API failure");
+        res.status(400).json("Failed retrieving API response")
+    }
 }
 
 module.exports = {handlePredictURL, handlePredictClipboard}

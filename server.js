@@ -5,15 +5,26 @@ const knex = require('knex');
 const app = express();
 
 // database config
+// const db = knex({
+//     client: 'pg',               // change to what db ur using
+//     connection: {
+//         connectionString: process.env.DATABASE_URL,
+//         ssl: {
+//             rejectUnauthorized: false
+//         }
+//     }
+// });
+
 const db = knex({
     client: 'pg',               // change to what db ur using
     connection: {
-        connectionString: process.env.DATABASE_URL,
-        ssl: {
-            rejectUnauthorized: false
-        }
+        host : '127.0.0.1',     // location of db (hosted platform)
+        user : 'postgres',
+        password : 'sandhi',
+        database : 'facedetection'
     }
 });
+
 
 // multer config, has 2 engines, using diskStorage or memoryStorage
 const multer = require('multer');

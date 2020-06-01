@@ -5,26 +5,9 @@ const knex = require('knex');
 const app = express();
 
 // database config
-// const db = knex({
-//     client: 'pg',               // change to what db ur using
-//     connection: {
-//         connectionString: process.env.DATABASE_URL,
-//         ssl: {
-//             rejectUnauthorized: false
-//         }
-//     }
-// });
-
-const db = knex({
-    client: 'pg',               // change to what db ur using
-    connection: {
-        host : '127.0.0.1',     // location of db (hosted platform)
-        user : 'postgres',
-        password : 'sandhi',
-        database : 'facedetection'
-    }
-});
-
+const connLocal = { host : '127.0.0.1', user : 'postgres', password : 'sandhi', database : 'facedetection' }
+const connHeroku = { connectionString: process.env.DATABASE_URL, ssl: {rejectUnauthorized: false} }
+const db = knex({ client: 'pg', connection: connHeroku });
 
 // multer config, has 2 engines, using diskStorage or memoryStorage
 const multer = require('multer');
@@ -77,36 +60,3 @@ app.post('/predict', (req,res) => predictsrc.handlePredictURL(req, res, db))
 app.post('/predictclipboard', getBuffer.single('imgBlob'), (req,res) => predictsrc.handlePredictClipboard(req, res, db))
 
 app.listen(PORT, () => { console.log('app is running on port ' + PORT) })
-
-/* TODO
-    predict route
-    1. process the prediction data, and store in database       DONE
-    2. send only box, age, gender, race     DONE
-    3. create mockup data   DONE
-    4. create a database according to scheme    DONE
-    5. simulate storing prediction into database    DONE
-    6. Fix error handling
-        you have catch everytime store in database but it sends a response which will trigger an error bcz other ops also sends response (can only send once)
-    7. send back updated images and predictions     DONE
-    8. change image path to be uploads... instead of ./uploads...
-
-    create register route   DONE
-    create signin route     DONE
-    create delete user route    DONE, needs testing (can do later)
-    create receive blobs route, store to faceblobs table, requires multer     DONE
-
-    for database
-    1. 'face' column in 'images' table is redundant, it equals to predictions.length, it's also hard to store synchronously, delete it later    NO, faces can be useful
-    2. mind that its possible that a prediction doesn't contain a face, so the predictions should not be NOT NULL
-    3. store faceblobs to database (after constructing front end), requires multer  DONE
-    4. very last: add option to receive blob data (from file upload, or pasting ss) instead of url (or can be done with generated URL blob??)   DONE
-
-    CURRENT
-    you want to use the downloaded image to be the one painted in the FE, but it needs to finish downloading before you can use it
-    otherwise it will return 404 Not Found      DONE, reworked the download function to return promise
-
-    1. at size limiter of only 1 MB
-
-    Left to do:
-    1. fix error handling and console.log for progress
-*/

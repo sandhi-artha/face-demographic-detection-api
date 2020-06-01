@@ -24,7 +24,6 @@ const handlePredictURL = async (req, res, db) => {
     try {
         // const response = mockupData(imgUrl);
         const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, imgUrl);
-        console.log(response);
         predict.handlePredict(req, res, db, imgUrl, userid, response)
     } catch (error) {
         console.log("invalid url or API failure");
@@ -40,7 +39,7 @@ const handlePredictClipboard = async (req, res, db) => {
         const response = await clarifaiApp.models.predict(Clarifai.DEMOGRAPHICS_MODEL, {base64: b64});
         predict.handlePredict(req, res, db, imgUrl, userid, response)
     } catch (error) {
-        console.log("invalid url or API failure");
+        console.log("API failure");
         res.status(400).json("Failed retrieving API response")
     }
 }

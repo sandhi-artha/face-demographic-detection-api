@@ -9,8 +9,9 @@ const handleRegister = (req, res, db) => {
         joined: new Date(),
         hash: hash
     }).then(data => {
-        console.log("user registered!");
-        res.json(data[0]) })
+        console.log(data.name+" registered!");
+        res.json({profile: data[0], images: [], predictions: []});
+    })
     .catch(err => res.status(400).json('Error: Name or email has already been used!'))
 }
 

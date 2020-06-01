@@ -13,7 +13,7 @@ const handleSignin = (req, res, db) => {
                         const imgid = images.map( image => image.imgid )
                         return trx('predictions').whereIn('imgid', imgid)
                             .then(predictions => {
-                                console.log("user signed in!");
+                                console.log(user[0].name+" signed in!");
                                 res.json({ profile: user[0], images, predictions });
                             })
                     })
